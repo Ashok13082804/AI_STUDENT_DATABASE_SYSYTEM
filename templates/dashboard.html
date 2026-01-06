@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Student Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        });
+    </script>
+</head>
+
+<body class="page-dashboard">
+    <nav>
+        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
+            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
+        </div>
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <a href="{{ url_for('dashboard') }}" style="color: white;">Dashboard</a>
+            <a href="{{ url_for('view_students') }}">View Students</a>
+            <a href="{{ url_for('add_student') }}">Add Student</a>
+            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
+            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline"
+                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <div class="glass-card" style="text-align: left;">
+            <span class="ai-badge">System Status: Active</span>
+            <h1 style="text-align: left; margin-top: 10px;">Welcome, {{ session['username'] }}</h1>
+            <p style="color: #94a3b8; line-height: 1.6;">Manage your student database with integrated AI analysis and
+                expanded record keeping. Access student details, parent information, and departmental trends from one
+                central hub.</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">250+</div>
+                    <div style="color: #94a3b8;">Total Student Capacity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-emerald);">11</div>
+                    <div style="color: #94a3b8;">Departments Supported</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: var(--accent-purple);">99%</div>
+                    <div style="color: #94a3b8;">Uptime Reliability</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; gap: 20px;">
+                <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add New Student</a>
+                <a href="{{ url_for('ai_insights') }}" class="btn btn-outline">Generate AI Insights</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

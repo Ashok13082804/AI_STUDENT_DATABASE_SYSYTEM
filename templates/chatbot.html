@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot - Student Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        });
+    </script>
+</head>
+
+<body class="page-ai">
+    <nav>
+        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
+            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
+        </div>
+        <div class="nav-links" style="display: flex; align-items: center;">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('view_students') }}">View Students</a>
+            <a href="{{ url_for('add_student') }}">Add Student</a>
+            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
+            <a href="{{ url_for('search_bot') }}" style="color: white;">Smart Bot</a>
+            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline"
+                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 800px;">
+        <div class="glass-card">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <span class="ai-badge">VIRTUAL ASSISTANT</span>
+                <h1>How can I help you today?</h1>
+                <p style="color: #94a3b8;">Ask me about student counts, departments, or registry summary.</p>
+            </div>
+
+            <form action="{{ url_for('search_bot') }}" method="get"
+                style="display: flex; gap: 10px; margin-bottom: 40px;">
+                <input type="text" name="query" placeholder="Try: 'Show all students' or 'Students in ECE'..."
+                    value="{{ query or '' }}" required style="flex: 1;">
+                <button type="submit" class="btn btn-primary">Ask Bot</button>
+            </form>
+
+            {% if response %}
+            <div class="stat-card"
+                style="text-align: left; border-left: 4px solid var(--accent-blue); animation: fadeIn 0.5s ease-out;">
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div
+                        style="background: var(--primary-gradient); padding: 10px; border-radius: 12px; font-size: 1.2rem;">
+                        🤖</div>
+                    <div>
+                        <h4 style="margin-bottom: 10px; color: var(--accent-blue);">AI Response:</h4>
+                        <p style="color: #cbd5e1; line-height: 1.6; font-size: 1.1rem;">{{ response }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px;">
+                <h5 style="color: #94a3b8; margin-bottom: 15px;">Suggested Queries:</h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <a href="{{ url_for('search_bot', query='How many students are registered?') }}"
+                        class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Count All</a>
+                    <a href="{{ url_for('search_bot', query='Show all students in ECE') }}" class="btn btn-outline"
+                        style="font-size: 0.8rem; padding: 6px 12px;">ECE Students</a>
+                    <a href="{{ url_for('search_bot', query='How many in CSE?') }}" class="btn btn-outline"
+                        style="font-size: 0.8rem; padding: 6px 12px;">CSE Count</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
