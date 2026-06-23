@@ -1,109 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ student['name'] }} - Profile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            const target = current === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('theme', target);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        });
-    </script>
-</head>
+{% block title %}{{ student['name'] }} - Profile{% endblock %}
+{% block body_class %}page-view{% endblock %}
 
-<body class="page-view">
-    <nav>
-        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
-            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">Student Dossier</span>
+    
+    <!-- Profile Banner Area -->
+    <div style="display: flex; gap: 30px; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 25px; margin-bottom: 30px; flex-wrap: wrap;">
+        {% if student['profile_photo'] %}
+        <img src="{{ url_for('static', filename='uploads/' ~ student['profile_photo']) }}" alt="{{ student['name'] }}" style="width: 120px; height: 120px; border-radius: 24px; object-fit: cover; border: 2px solid var(--accent-blue); box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
+        {% else %}
+        <div style="width: 120px; height: 120px; border-radius: 24px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 3rem; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.3);">
+            {{ student['name'][0] | upper }}
         </div>
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('view_students') }}">View Students</a>
-            <a href="{{ url_for('add_student') }}">Add Student</a>
-            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
-            <a href="{{ url_for('search_bot') }}">Smart Bot</a>
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline"
-                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
+        {% endif %}
+
+        <div>
+            <span class="ai-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); font-size: 0.9rem; padding: 4px 10px;">ID: {{ student['id'] }}</span>
+            <h1 style="text-align: left; margin: 10px 0 5px;">{{ student['name'] }}</h1>
+            <p style="color: #94a3b8; font-size: 1.1rem; font-weight: 500;">
+                {{ student['department'] }} &bull; {{ student['semester'] or student['year'] }}
+            </p>
         </div>
-    </nav>
+    </div>
 
-    <div class="container">
-        <div class="glass-card">
-            <div class="profile-header">
-                <div class="profile-avatar">
-                    {{ student['name'][0].upper() }}
-                </div>
-                <div style="text-align: left;">
-                    <span class="ai-badge">{{ student['id'] }}</span>
-                    <h1 style="text-align: left; margin: 10px 0;">{{ student['name'] }}</h1>
-                    <p style="color: #94a3b8;">{{ student['department'] }} | {{ student['year'] }}</p>
-                </div>
+    <!-- Student Detail Grid -->
+    <div class="form-grid" style="margin-bottom: 30px;">
+        <!-- Column 1: Academic & Demographics -->
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px;">
+            <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1.1rem;">Academic & Financials</h3>
+            
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Cumulative CGPA</span>
+                <strong style="color: var(--accent-amber);">{{ student['cgpa'] or '0.00' }} / 10.0</strong>
             </div>
-
-            <div class="form-grid">
-                <div class="detail-section">
-                    <h3 style="margin-bottom: 15px; background: none; -webkit-text-fill-color: initial; color: white;">
-                        Contact Details</h3>
-                    <div class="detail-item">
-                        <span class="detail-label">Email</span>
-                        <span>{{ student['email'] }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Hobbies</span>
-                        <span>{{ student['hobbies'] or 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Address</span>
-                        <span style="max-width: 200px; text-align: right;">{{ student['address'] or 'N/A' }}</span>
-                    </div>
-                </div>
-
-                <div class="detail-section">
-                    <h3 style="margin-bottom: 15px; background: none; -webkit-text-fill-color: initial; color: white;">
-                        Parent Information</h3>
-                    <div class="detail-item">
-                        <span class="detail-label">Guardian</span>
-                        <span>{{ student['parent_name'] or 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Occupation</span>
-                        <span>{{ student['parent_occupation'] or 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Contact</span>
-                        <span>{{ student['parent_contact'] or 'N/A' }}</span>
-                    </div>
-                </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Social Category</span>
+                <strong>{{ student['category'] or 'General' }}</strong>
             </div>
-
-            <div class="detail-section" style="margin-top: 20px;">
-                <h3 style="margin-bottom: 15px; background: none; -webkit-text-fill-color: initial; color: white;">AI
-                    Insights & Notes</h3>
-                <p style="color: #cbd5e1; line-height: 1.6;">{{ student['additional_info'] or 'No additional data
-                    available for analysis.' }}</p>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Household Income</span>
+                <strong>${{ student['income'] or '0.00' }} / Year</strong>
             </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: #64748b;">Certificates / PDF</span>
+                <span>
+                    {% if student['documents'] %}
+                    <a href="{{ url_for('static', filename='uploads/' ~ student['documents']) }}" target="_blank" style="color: var(--accent-blue); text-decoration: underline; font-size: 0.9rem;">
+                        📄 View Document
+                    </a>
+                    {% else %}
+                    <span style="color: #64748b; font-size: 0.9rem;">Not Uploaded</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
 
-            <div style="margin-top: 40px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-                <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-primary">Edit
-                    Profile</a>
-                <a href="{{ url_for('generate_report', student_id=student['id']) }}" class="btn btn-outline"
-                    style="border-color: var(--accent-emerald); color: var(--accent-emerald);">Download AI PDF
-                    Report</a>
-                <a href="{{ url_for('view_students') }}" class="btn btn-outline">Back to Registry</a>
+        <!-- Column 2: Personal Contact Details -->
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px;">
+            <h3 style="color: var(--accent-emerald); margin-bottom: 15px; font-size: 1.1rem;">Contact & Hobbies</h3>
+            
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Email Address</span>
+                <strong>{{ student['email'] }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Student Hobbies</span>
+                <strong>{{ student['hobbies'] or 'N/A' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: #64748b;">Home Address</span>
+                <strong style="max-width: 220px; text-align: right; font-weight: normal; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ student['address'] or 'N/A' }}</strong>
+            </div>
+        </div>
+
+        <!-- Column 3: Parent/Guardian Details -->
+        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px;">
+            <h3 style="color: var(--accent-purple); margin-bottom: 15px; font-size: 1.1rem;">Parent Information</h3>
+            
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Parent/Guardian</span>
+                <strong>{{ student['parent_name'] or 'N/A' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                <span style="color: #64748b;">Occupation</span>
+                <strong>{{ student['parent_occupation'] or 'N/A' }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                <span style="color: #64748b;">Contact Number</span>
+                <strong>{{ student['parent_contact'] or 'N/A' }}</strong>
             </div>
         </div>
     </div>
-</body>
 
-</html>
+    <!-- ML Performance Analysis Card -->
+    {% if ml_prediction %}
+    <div style="background: rgba(251, 113, 133, 0.05); border: 1px solid rgba(251, 113, 133, 0.2); padding: 25px; border-radius: 16px; margin-bottom: 30px;">
+        <h3 style="color: var(--accent-rose); margin-bottom: 12px;">🤖 ML Student Performance Analysis</h3>
+        <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 15px;">
+            Predicted risk assessment and exam clearance criteria compiled from current attendance, CGPA, and internal markings:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
+            <div>
+                <span style="color: #64748b; font-size: 0.85rem; display: block;">Pass/Fail Prediction</span>
+                <strong style="font-size: 1.2rem; color: {% if ml_prediction.pass_prediction == 'Pass' %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">{{ ml_prediction.pass_prediction }}</strong>
+            </div>
+            <div>
+                <span style="color: #64748b; font-size: 0.85rem; display: block;">Passing Probability</span>
+                <strong style="font-size: 1.2rem; color: var(--accent-blue);">{{ ml_prediction.pass_probability }}%</strong>
+            </div>
+            <div>
+                <span style="color: #64748b; font-size: 0.85rem; display: block;">Academic Risk Category</span>
+                <span class="badge {% if ml_prediction.risk_level == 'High' %}badge-high{% elif ml_prediction.risk_level == 'Medium' %}badge-medium{% else %}badge-low{% endif %}" style="font-size: 0.95rem; margin-top: 4px;">{{ ml_prediction.risk_level }} Risk</span>
+            </div>
+        </div>
+        <div style="color: #cbd5e1; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+            <strong>System Recommendation:</strong> {{ ml_prediction.recommendation }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Student Bio/Additional Notes -->
+    <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--glass-border); padding: 25px; border-radius: 16px; margin-bottom: 30px;">
+        <h3 style="color: var(--accent-blue); margin-bottom: 12px;">AI Insights & Bio Notes</h3>
+        <p style="color: #cbd5e1; line-height: 1.6;">
+            {{ student['additional_info'] or 'No supplementary data records added. Add extra notes to seed bio profiles.' }}
+        </p>
+    </div>
+
+    <!-- Actions Footer -->
+    <div style="display: flex; gap: 15px; justify-content: flex-end; flex-wrap: wrap;">
+        <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-primary" style="padding: 10px 20px;">Edit Profile Details</a>
+        <a href="{{ url_for('generate_report', student_id=student['id']) }}" class="btn btn-outline" style="border-color: var(--accent-emerald); color: var(--accent-emerald); padding: 10px 20px;">
+            📥 Download Official Report
+        </a>
+        <a href="{{ url_for('view_students') }}" class="btn btn-outline" style="padding: 10px 20px;">Back to Registry</a>
+    </div>
+</div>
+{% endblock %}

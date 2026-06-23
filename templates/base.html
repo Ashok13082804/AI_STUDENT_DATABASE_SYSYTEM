@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Student Database{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        nav .nav-links a.active-link {
+            color: var(--accent-blue) !important;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 4px;
+            font-weight: 700;
+        }
+        .flash {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+    </style>
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+
+            // Highlight active navigation link
+            const currentPath = window.location.pathname;
+            const links = document.querySelectorAll('nav .nav-links a');
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || (currentPath.startsWith('/student/') && href === '/view')) {
+                    link.classList.add('active-link');
+                }
+            });
+
+            // Auto-dismiss flash messages after 4 seconds
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(flash => {
+                // Add close button
+                const closeBtn = document.createElement('span');
+                closeBtn.innerHTML = ' &times;';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.style.float = 'right';
+                closeBtn.style.fontWeight = 'bold';
+                closeBtn.style.marginLeft = '15px';
+                closeBtn.onclick = () => {
+                    flash.style.opacity = '0';
+                    setTimeout(() => flash.remove(), 500);
+                };
+                flash.appendChild(closeBtn);
+
+                // Auto close timer
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                    flash.style.transform = 'translateY(-10px)';
+                    setTimeout(() => flash.remove(), 500);
+                }, 4000);
+            });
+        });
+    </script>
+</head>
+<body class="{% block body_class %}page-dashboard{% endblock %}">
+    <nav>
+        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
+            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> STUDENT PORTAL
+        </div>
+        <div class="nav-links" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('view_students') }}">Students</a>
+            <a href="{{ url_for('courses_view') }}">Courses</a>
+            <a href="{{ url_for('attendance_view') }}">Attendance</a>
+            <a href="{{ url_for('marks_view') }}">Grades</a>
+            <a href="{{ url_for('modules_view') }}">Other Modules</a>
+            <a href="{{ url_for('dsa_visualizer') }}">DSA Visualizer</a>
+            <a href="{{ url_for('search_bot') }}">Chat Bot</a>
+            <button onclick="toggleTheme()" class="theme-toggle" style="background: none; border: none; font-size: 1.2rem; cursor: pointer;">🌓</button>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline" style="padding: 8px 16px;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

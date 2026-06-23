@@ -1,79 +1,225 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - AI Student Database</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            const target = current === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('theme', target);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        });
-    </script>
-</head>
+{% block title %}Dashboard - AI Student Database{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
 
-<body class="page-dashboard">
-    <nav>
-        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
-            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">System Role: {{ session['role'] | upper }}</span>
+    <h1 style="text-align: left; margin-top: 10px;">Welcome Back, {{ session['username'] }}</h1>
+    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+        Student Database Management dashboard with ML risk analysis, course mappings, fee ledger analytics, library monitoring, and automated scheduling controls.
+    </p>
+
+    <!-- Stat Metric Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ metrics.total_students }}</div>
+            <div style="color: #94a3b8; font-weight: 500;">Total Students</div>
         </div>
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <a href="{{ url_for('dashboard') }}" style="color: white;">Dashboard</a>
-            <a href="{{ url_for('view_students') }}">View Students</a>
-            <a href="{{ url_for('add_student') }}">Add Student</a>
-            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline"
-                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--accent-emerald);">{{ metrics.total_courses }}</div>
+            <div style="color: #94a3b8; font-weight: 500;">Courses Offered</div>
         </div>
-    </nav>
-
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="flash flash-{{ category }}">{{ message }}</div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        <div class="glass-card" style="text-align: left;">
-            <span class="ai-badge">System Status: Active</span>
-            <h1 style="text-align: left; margin-top: 10px;">Welcome, {{ session['username'] }}</h1>
-            <p style="color: #94a3b8; line-height: 1.6;">Manage your student database with integrated AI analysis and
-                expanded record keeping. Access student details, parent information, and departmental trends from one
-                central hub.</p>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">250+</div>
-                    <div style="color: #94a3b8;">Total Student Capacity</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--accent-emerald);">11</div>
-                    <div style="color: #94a3b8;">Departments Supported</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: var(--accent-purple);">99%</div>
-                    <div style="color: #94a3b8;">Uptime Reliability</div>
-                </div>
-            </div>
-
-            <div style="margin-top: 40px; display: flex; gap: 20px;">
-                <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add New Student</a>
-                <a href="{{ url_for('ai_insights') }}" class="btn btn-outline">Generate AI Insights</a>
-            </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--accent-rose);">{{ metrics.defaulters_count }}</div>
+            <div style="color: #94a3b8; font-weight: 500;">Attendance Defaulters</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--accent-purple);">{{ metrics.active_loans }}</div>
+            <div style="color: #94a3b8; font-weight: 500;">Active Book Loans</div>
         </div>
     </div>
-</body>
 
-</html>
+    <!-- Charts Section -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 40px;">
+        <div class="stat-card" style="text-align: left;">
+            <h3 style="margin-bottom: 20px; color: var(--accent-blue);">Department-wise Student Count</h3>
+            <canvas id="deptChart" style="max-height: 250px;"></canvas>
+        </div>
+        <div class="stat-card" style="text-align: left;">
+            <h3 style="margin-bottom: 20px; color: var(--accent-emerald);">Enrollment Status (Internal Scores vs Attendance)</h3>
+            <canvas id="scatterChart" style="max-height: 250px;"></canvas>
+        </div>
+    </div>
+
+    <!-- ML Performance Analysis Section -->
+    <div style="margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 30px;">
+        <h2 style="text-align: left; margin-bottom: 20px; color: var(--accent-rose); font-size: 1.5rem;">🤖 ML Student Performance Risk Alerts</h2>
+        <div class="table-container">
+            {% if at_risk_students %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Attendance</th>
+                        <th>Avg. Internal Marks</th>
+                        <th>Current CGPA</th>
+                        <th>Risk Level</th>
+                        <th>System Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in at_risk_students %}
+                    <tr>
+                        <td><strong>{{ student.id }}</strong></td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.attendance }}%</td>
+                        <td>{{ student.internals }}/30</td>
+                        <td>{{ student.cgpa }}</td>
+                        <td>
+                            <span class="badge {% if student.risk == 'High' %}badge-high{% else %}badge-medium{% endif %}">
+                                {{ student.risk }}
+                            </span>
+                        </td>
+                        <td style="font-size: 0.9rem; color: #94a3b8;">{{ student.recommendation }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="color: #94a3b8;">No high-risk students flagged by the machine learning model. All metrics are in good standing.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Performing Students (HEAP) & System Notifications -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 30px;">
+        
+        <!-- Heap Ranking Table -->
+        <div class="stat-card" style="text-align: left; padding: 25px;">
+            <h3 style="margin-bottom: 20px; color: var(--accent-amber);">🏆 Top Performing Students (Max-Heap Rank)</h3>
+            <div class="table-container">
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Dept</th>
+                            <th>CGPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rank_s in top_students %}
+                        <tr>
+                            <td><strong>#{{ loop.index }}</strong></td>
+                            <td>{{ rank_s.name }}</td>
+                            <td>{{ rank_s.department }}</td>
+                            <td style="color: var(--accent-amber); font-weight: bold;">{{ rank_s.cgpa }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Notifications Feed -->
+        <div class="stat-card" style="text-align: left; padding: 25px;">
+            <h3 style="margin-bottom: 20px; color: var(--accent-purple);">🔔 Institutional Announcements</h3>
+            <div class="notification-list">
+                {% for notif in notifications %}
+                <div class="notification-item">
+                    <div class="notification-content">
+                        <h4>{{ notif.title }}</h4>
+                        <p>{{ notif.message }}</p>
+                    </div>
+                    <div class="notification-date">{{ notif.date }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <form action="{{ url_for('post_notification') }}" method="POST" style="margin-top: 20px; display: flex; gap: 10px;">
+                <input type="text" name="title" placeholder="Notice Title" required style="padding: 8px 12px; border-radius: 8px;">
+                <input type="text" name="message" placeholder="Content details..." required style="padding: 8px 12px; border-radius: 8px;">
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Publish</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Management Controls -->
+    <div style="margin-top: 40px; display: flex; gap: 20px; flex-wrap: wrap;">
+        <a href="{{ url_for('add_student') }}" class="btn btn-primary">Add New Student</a>
+        <a href="{{ url_for('dsa_visualizer') }}" class="btn btn-outline">Explore DSA Mappings</a>
+        <a href="{{ url_for('modules_view') }}" class="btn btn-outline" style="border-color: var(--accent-purple);">View Fee/Library Ledger</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 1. Department Breakdown Chart
+    const deptCtx = document.getElementById('deptChart').getContext('2d');
+    const deptLabels = {{ dept_chart_data['labels'] | tojson }};
+    const deptValues = {{ dept_chart_data['values'] | tojson }};
+    
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                label: 'Student Enrolled',
+                data: deptValues,
+                backgroundColor: [
+                    'rgba(56, 189, 248, 0.6)',
+                    'rgba(192, 132, 252, 0.6)',
+                    'rgba(52, 211, 153, 0.6)',
+                    'rgba(251, 191, 36, 0.6)',
+                    'rgba(251, 113, 133, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(56, 189, 248, 1)',
+                    'rgba(192, 132, 252, 1)',
+                    'rgba(52, 211, 153, 1)',
+                    'rgba(251, 191, 36, 1)',
+                    'rgba(251, 113, 133, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+        }
+    });
+
+    // 2. Attendance & Internals Scatter Chart
+    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
+    const scatterData = {{ scatter_chart_data | tojson }};
+    
+    new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Students',
+                data: scatterData,
+                backgroundColor: 'rgba(192, 132, 252, 0.8)',
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Attendance (%)', color: '#94a3b8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' },
+                    min: 0,
+                    max: 100
+                },
+                y: {
+                    title: { display: true, text: 'Internal Marks (/30)', color: '#94a3b8' },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' },
+                    min: 0,
+                    max: 30
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

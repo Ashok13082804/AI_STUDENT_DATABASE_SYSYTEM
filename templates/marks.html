@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Grades - Student Database System{% endblock %}
+{% block body_class %}page-marks{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">Grades & GPA Ledger</span>
+    <h1 style="text-align: left; margin-top: 10px;">Academic Performance & Grade Cards</h1>
+    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+        Grade bookkeeping module. Enter internal assessment marks (max 30) and end-semester examinations (max 70) to automatically compute grades, GPAs, and generate downloadable PDF grade reports.
+    </p>
+
+    <!-- Tabbed views -->
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab(event, 'view-grades-tab')">📜 Grade Sheets</button>
+            <button class="tab-btn" onclick="switchTab(event, 'subject-stats-tab')">📊 Class Averages</button>
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <button class="tab-btn" onclick="switchTab(event, 'enter-marks-tab')">✍️ Enter Student Marks</button>
+            {% endif %}
+        </div>
+
+        <!-- 1. Grade Sheets Tab -->
+        <div id="view-grades-tab" class="tab-content active">
+            <h3 style="color: var(--accent-blue); margin-bottom: 15px;">Student Grade Ledger</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Course Code</th>
+                            <th>Course Title</th>
+                            <th>Internal (/30)</th>
+                            <th>Exam (/70)</th>
+                            <th>Total (/100)</th>
+                            <th>Grade Assigned</th>
+                            <th>Grade Card Export</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in grade_records %}
+                        <tr>
+                            <td>{{ record.student_id }}</td>
+                            <td>{{ record.student_name }}</td>
+                            <td><strong>{{ record.course_id }}</strong></td>
+                            <td>{{ record.course_name }}</td>
+                            <td>{{ record.internal_marks or 0 }}/30</td>
+                            <td>{{ record.exam_marks or 0 }}/70</td>
+                            <td><strong>{{ (record.internal_marks or 0) + (record.exam_marks or 0) }}</strong>/100</td>
+                            <td>
+                                <span class="badge {% if record.grade in ['O', 'A+', 'A'] %}badge-low{% elif record.grade in ['B', 'C'] %}badge-medium{% else %}badge-high{% endif %}">
+                                    {{ record.grade or 'F (Pending)' }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('download_report_card', enrollment_id=record.id) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: var(--accent-emerald); color: var(--accent-emerald);">
+                                    📥 Download PDF
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. Class Averages Tab -->
+        <div id="subject-stats-tab" class="tab-content">
+            <h3 style="color: var(--accent-emerald); margin-bottom: 15px;">Subject-wise Class Performance Averages</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Course ID</th>
+                            <th>Course Title</th>
+                            <th>Department</th>
+                            <th>Enrolled Count</th>
+                            <th>Average Score</th>
+                            <th>Pass Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c_stat in course_stats %}
+                        <tr>
+                            <td><strong>{{ c_stat.course_id }}</strong></td>
+                            <td>{{ c_stat.course_name }}</td>
+                            <td>{{ c_stat.department }}</td>
+                            <td>{{ c_stat.total_students }}</td>
+                            <td style="color: var(--accent-blue); font-weight: bold;">{{ c_stat.avg_score | round(2) }}/100</td>
+                            <td>
+                                <span class="badge badge-low">{{ c_stat.pass_percentage | round(1) }}% Pass</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. Enter Student Marks Tab -->
+        {% if session['role'] in ['admin', 'faculty'] %}
+        <div id="enter-marks-tab" class="tab-content">
+            <h3 style="color: var(--accent-purple); margin-bottom: 15px;">Assign Internal & Exam Scores</h3>
+            <form action="{{ url_for('update_marks') }}" method="POST" style="max-width: 600px;">
+                <div class="form-group">
+                    <label for="enrollment_id">Select Course Enrollment</label>
+                    <select name="enrollment_id" required>
+                        <option value="">-- Choose Enrollment Record --</option>
+                        {% for record in grade_records %}
+                        <option value="{{ record.id }}">{{ record.student_name }} ({{ record.student_id }}) - {{ record.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="internal_marks">Internal Assessment Marks (0 to 30)</label>
+                        <input type="number" name="internal_marks" min="0" max="30" step="0.5" required placeholder="e.g. 24.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="exam_marks">End-Semester Exam Marks (0 to 70)</label>
+                        <input type="number" name="exam_marks" min="0" max="70" step="0.5" required placeholder="e.g. 52">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Academic Marks & Compute Grade</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function switchTab(evt, tabId) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove("active");
+        }
+        const tabButtons = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabButtons.length; i++) {
+            tabButtons[i].classList.remove("active");
+        }
+        document.getElementById(tabId).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
+{% endblock %}

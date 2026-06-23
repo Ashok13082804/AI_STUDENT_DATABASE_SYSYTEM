@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+
+{% block title %}Services Modules - Student Database System{% endblock %}
+{% block body_class %}page-modules{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">Core Student Utilities</span>
+    <h1 style="text-align: left; margin-top: 10px;">Utility Modules Portal</h1>
+    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+        Access institutional modules including Fee collection records, Library book circulation audits, Placement eligibility queries, and Scholarship eligibility analysis.
+    </p>
+
+    <!-- Tab Container -->
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab(event, 'fees-tab')">💳 Fee Ledger</button>
+            <button class="tab-btn" onclick="switchTab(event, 'library-tab')">📖 Library Desk</button>
+            <button class="tab-btn" onclick="switchTab(event, 'placement-tab')">💼 Placement Cell</button>
+            <button class="tab-btn" onclick="switchTab(event, 'scholarship-tab')">🎓 Scholarship Finder</button>
+        </div>
+
+        <!-- 1. Fee Management Tab -->
+        <div id="fees-tab" class="tab-content active">
+            <h3 style="color: var(--accent-blue); margin-bottom: 15px;">Student Fee Balances</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Total Fee</th>
+                            <th>Paid Fee</th>
+                            <th>Outstanding Balance</th>
+                            <th>Payment Status</th>
+                            <th>Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fee_records %}
+                        <tr>
+                            <td>{{ fee.student_id }}</td>
+                            <td>{{ fee.student_name }}</td>
+                            <td>${{ fee.total_fee }}</td>
+                            <td style="color: var(--accent-emerald);">${{ fee.paid_fee }}</td>
+                            <td style="color: var(--accent-rose); font-weight: bold;">${{ fee.pending_fee }}</td>
+                            <td>
+                                <span class="badge {% if fee.pending_fee <= 0 %}badge-low{% else %}badge-high{% endif %}">
+                                    {% if fee.pending_fee <= 0 %}Fully Paid{% else %}Pending{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('download_fee_receipt', student_id=fee.student_id) }}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem; border-color: var(--accent-blue); color: var(--accent-blue);">
+                                    🎫 Receipt
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <h3 style="color: var(--accent-purple); margin-top: 40px; margin-bottom: 15px; border-top: 1px solid var(--glass-border); padding-top: 25px;">Register Fee Payment</h3>
+            <form action="{{ url_for('post_fee_payment') }}" method="POST" style="max-width: 500px;">
+                <div class="form-group">
+                    <label for="student_id">Select Student</label>
+                    <select name="student_id" required>
+                        <option value="">-- Choose Student --</option>
+                        {% for s in students_list %}
+                        <option value="{{ s.id }}">{{ s.name }} (ID: {{ s.id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="amount">Payment Amount ($)</label>
+                        <input type="number" name="amount" min="1" step="0.01" required placeholder="500.00">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Process Payment</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- 2. Library Desk Tab -->
+        <div id="library-tab" class="tab-content">
+            <h3 style="color: var(--accent-emerald); margin-bottom: 15px;">Library Book Catalog</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book ID</th>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Copies Available</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td><strong>{{ book.book_id }}</strong></td>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.author }}</td>
+                            <td>{{ book.available_copies }} copies</td>
+                            <td>
+                                <span class="badge {% if book.available_copies > 0 %}badge-low{% else %}badge-high{% endif %}">
+                                    {% if book.available_copies > 0 %}Available{% else %}Out of Stock{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-purple); margin-top: 40px; margin-bottom: 15px; border-top: 1px solid var(--glass-border); padding-top: 25px;">Active Lending Books Ledger</h3>
+            <div class="table-container" style="margin-bottom: 30px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Return Date</th>
+                            <th>Overdue Fine</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>{{ loan.student_name }}</td>
+                            <td>{{ loan.book_title }}</td>
+                            <td>{{ loan.issue_date }}</td>
+                            <td>{{ loan.return_date or 'Borrowed' }}</td>
+                            <td style="color: {% if loan.fine_amount > 0 %}var(--accent-rose){% else %}#94a3b8{% endif %}; font-weight: bold;">
+                                ${{ loan.fine_amount }}
+                            </td>
+                            <td>
+                                {% if not loan.return_date %}
+                                <a href="{{ url_for('return_book', loan_id=loan.loan_id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: var(--accent-emerald);">Return Book</a>
+                                {% else %}
+                                <span style="color: #64748b; font-size: 0.9rem;">Returned</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <h3 style="color: var(--accent-blue); margin-bottom: 15px;">Circulate / Lend Book</h3>
+            <form action="{{ url_for('post_lend_book') }}" method="POST" style="max-width: 500px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="book_id">Select Book</label>
+                        <select name="book_id" required>
+                            <option value="">-- Choose Book --</option>
+                            {% for b in books %}
+                            {% if b.available_copies > 0 %}
+                            <option value="{{ b.book_id }}">{{ b.title }} (Code: {{ b.book_id }})</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="student_id">Select Student Borrower</label>
+                        <select name="student_id" required>
+                            <option value="">-- Choose Student --</option>
+                            {% for s in students_list %}
+                            <option value="{{ s.id }}">{{ s.name }} (ID: {{ s.id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Lend Out Book</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- 3. Placement Cell Tab -->
+        <div id="placement-tab" class="tab-content">
+            <h3 style="color: var(--accent-purple); margin-bottom: 15px;">Active Campus Recruitment Drives</h3>
+            <div class="table-container" style="margin-bottom: 30px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Company</th>
+                            <th>Role</th>
+                            <th>Min. CGPA Req.</th>
+                            <th>Salary Offered</th>
+                            <th>Interview Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                        <tr>
+                            <td><strong>{{ job.company_name }}</strong></td>
+                            <td>{{ job.job_role }}</td>
+                            <td style="color: var(--accent-blue); font-weight: bold;">{{ job.min_cgpa }} CGPA</td>
+                            <td>{{ job.salary }}</td>
+                            <td>{{ job.interview_date }}</td>
+                            <td>
+                                <span class="badge {% if job.status == 'Open' %}badge-low{% else %}badge-high{% endif %}">
+                                    {{ job.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="color: var(--accent-amber); margin-bottom: 15px; border-top: 1px solid var(--glass-border); padding-top: 25px;">Check Eligible Student Candidates</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 20px;">
+                Select a placement drive to filter students who satisfy the minimum CGPA requirement:
+            </p>
+            <div style="display: flex; gap: 10px; max-width: 500px; margin-bottom: 30px;">
+                <select id="placement-select" style="padding: 10px; border-radius: 8px;">
+                    <option value="">-- Choose Recruitment Drive --</option>
+                    {% for job in jobs %}
+                    <option value="{{ job.min_cgpa }}">{{ job.company_name }} - {{ job.job_role }} (&ge; {{ job.min_cgpa }} CGPA)</option>
+                    {% endfor %}
+                </select>
+                <button onclick="checkEligibleCandidates()" class="btn btn-primary" style="padding: 10px 20px;">Filter Candidates</button>
+            </div>
+            
+            <div id="eligibility-result" class="grid-lists" style="display: none;"></div>
+
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <h3 style="color: var(--accent-blue); margin-top: 40px; margin-bottom: 15px; border-top: 1px solid var(--glass-border); padding-top: 25px;">Register Recruitment Drive</h3>
+            <form action="{{ url_for('post_placement') }}" method="POST" style="max-width: 600px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="company_name">Company Name</label>
+                        <input type="text" name="company_name" required placeholder="Google LLC">
+                    </div>
+                    <div class="form-group">
+                        <label for="job_role">Job Role</label>
+                        <input type="text" name="job_role" required placeholder="Associate Software Engineer">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="min_cgpa">Min. CGPA Cut-off</label>
+                        <input type="number" name="min_cgpa" min="0" max="10" step="0.01" required placeholder="8.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="salary">Package Offered</label>
+                        <input type="text" name="salary" required placeholder="140,000 USD / Year">
+                    </div>
+                </div>
+                <div class="form-group" style="max-width: 290px;">
+                    <label for="interview_date">Interview Date</label>
+                    <input type="date" name="interview_date" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Schedule Recruiter Drive</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- 4. Scholarship Finder Tab -->
+        <div id="scholarship-tab" class="tab-content">
+            <h3 style="color: var(--accent-amber); margin-bottom: 15px;">Scholarship Scheme Eligibility Evaluator</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 25px;">
+                Evaluates a student's eligibility for academic and needs-based scholarship assistance. Criteria include:
+                <strong>CGPA &ge; 7.5</strong>, <strong>Attendance &ge; 75%</strong>, and <strong>Household Income limit based on Caste Category</strong>.
+            </p>
+
+            <form id="scholarship-form" onsubmit="evaluateScholarship(event)" style="max-width: 600px; margin-bottom: 30px;">
+                <div class="form-group">
+                    <label for="scholarship_student_id">Select Student</label>
+                    <select id="scholarship_student_id" required>
+                        <option value="">-- Choose Student --</option>
+                        {% for s in students_list %}
+                        <option value="{{ s.id }}">{{ s.name }} (ID: {{ s.id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="category">Social Category</label>
+                        <select id="scholarship_category" required>
+                            <option value="General">General</option>
+                            <option value="OBC">OBC</option>
+                            <option value="SC">SC</option>
+                            <option value="ST">ST</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="income">Annual Household Income ($)</label>
+                        <input type="number" id="scholarship_income" min="0" required placeholder="e.g. 15000">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="background: var(--accent-amber);">Check Scheme Eligibility</button>
+            </form>
+
+            <div id="scholarship-result" class="dsa-graphic" style="display: none; padding: 25px; text-align: left; align-items: flex-start; flex-direction: column;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(evt, tabId) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove("active");
+        }
+        const tabButtons = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabButtons.length; i++) {
+            tabButtons[i].classList.remove("active");
+        }
+        document.getElementById(tabId).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function checkEligibleCandidates() {
+        const minCgpaVal = document.getElementById("placement-select").value;
+        const resultDiv = document.getElementById("eligibility-result");
+        
+        if (!minCgpaVal) {
+            resultDiv.style.display = "none";
+            return;
+        }
+
+        resultDiv.style.display = "grid";
+        resultDiv.innerHTML = "<p style='grid-column: 1/-1;'>Filtering students...</p>";
+
+        fetch(`/api/placement_eligible?min_cgpa=${minCgpaVal}`)
+            .then(res => res.json())
+            .then(students => {
+                if (students.length === 0) {
+                    resultDiv.innerHTML = "<p style='color: var(--accent-rose); grid-column: 1/-1;'>No students meet the CGPA threshold for this recruiter drive.</p>";
+                } else {
+                    resultDiv.innerHTML = students.map(s => `
+                        <div class="grid-list-item">
+                            <h4 style="color: var(--accent-blue); margin-bottom: 5px;">${s.name}</h4>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 3px;">Dept: ${s.department}</p>
+                            <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px;">Semester: ${s.semester}</p>
+                            <div style="font-weight: bold; font-size: 0.9rem; color: var(--accent-amber);">CGPA: ${s.cgpa}</div>
+                        </div>
+                    `).join("");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                resultDiv.innerHTML = "<p style='color: var(--accent-rose);'>Server connection failure.</p>";
+            });
+    }
+
+    function evaluateScholarship(evt) {
+        evt.preventDefault();
+        const studentId = document.getElementById("scholarship_student_id").value;
+        const category = document.getElementById("scholarship_category").value;
+        const income = document.getElementById("scholarship_income").value;
+
+        fetch(`/api/scholarship_check?student_id=${studentId}&category=${category}&income=${income}`)
+            .then(res => res.json())
+            .then(data => {
+                const resultDiv = document.getElementById("scholarship-result");
+                resultDiv.style.display = "flex";
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<span style="color: var(--accent-rose);">Error: ${data.error}</span>`;
+                    return;
+                }
+
+                let statusBadge = data.eligible 
+                    ? `<span class="badge badge-low" style="font-size: 1.1rem; padding: 6px 12px; margin-bottom: 15px;">✅ Eligible</span>`
+                    : `<span class="badge badge-high" style="font-size: 1.1rem; padding: 6px 12px; margin-bottom: 15px;">❌ Not Eligible</span>`;
+
+                let criteriaHtml = `
+                    <div style="width: 100%;">
+                        ${statusBadge}
+                        <h4 style="color: var(--text-color); margin-bottom: 10px;">Scholarship Scheme Evaluation Report:</h4>
+                        <ul style="color: #94a3b8; line-height: 1.6; margin-left: 20px;">
+                            <li>Student Cumulative CGPA: <strong>${data.cgpa}</strong> (Requirement: &ge; 7.5)</li>
+                            <li>Average Course Attendance: <strong>${data.attendance}%</strong> (Requirement: &ge; 75%)</li>
+                            <li>Social Group Category: <strong>${data.category}</strong></li>
+                            <li>Assessed Family Income: <strong>$${data.income}</strong> (Threshold for ${data.category}: $${data.threshold})</li>
+                        </ul>
+                        <div style="margin-top: 15px; font-weight: 500; color: ${data.eligible ? 'var(--accent-emerald)' : 'var(--accent-rose)'};">
+                            Recommendation: ${data.remarks}
+                        </div>
+                    </div>
+                `;
+                resultDiv.innerHTML = criteriaHtml;
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    }
+</script>
+{% endblock %}

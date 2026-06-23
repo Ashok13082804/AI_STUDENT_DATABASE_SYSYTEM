@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}DSA Visualizer - Student Database System{% endblock %}
+{% block body_class %}page-dsa{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">DSA Educational Visualizer</span>
+    <h1 style="text-align: left; margin-top: 10px;">Data Structures & Algorithms Laboratory</h1>
+    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+        This page demonstrates core computer science algorithms and structures integrated within the Student Database Management system.
+    </p>
+
+    <!-- Visualizer Panels Grid -->
+    <div class="dsa-visualizer-container">
+        
+        <!-- 1. Binary Search Tree (BST) Search -->
+        <div class="dsa-panel">
+            <h3 style="color: var(--accent-blue); margin-bottom: 12px;">🔍 1. BST Student ID Lookup</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 15px;">
+                Finds a student record in the memory-resident BST sorted by ID. Compares BST traversal paths to linear searching.
+            </p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="bst-search-id" placeholder="Student ID (e.g. S1001)" style="padding: 8px; border-radius: 8px;">
+                <button onclick="runBstSearch()" class="btn btn-primary" style="padding: 8px 16px;">BST Search</button>
+            </div>
+            
+            <div id="bst-path-box" class="dsa-graphic" style="font-size: 0.9rem; padding: 15px;">
+                Search Path: Awaiting Input...
+            </div>
+            
+            <div id="bst-compare-box" style="margin-top: 10px; font-size: 0.85rem; color: #94a3b8;"></div>
+        </div>
+
+        <!-- 2. Max-Heap CGPA Rankings -->
+        <div class="dsa-panel">
+            <h3 style="color: var(--accent-amber); margin-bottom: 12px;">🏆 2. Max-Heap CGPA Rank Array</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 15px;">
+                Students are organized in a Max-Heap structure for Top-K querying. The binary heap array is laid out below:
+            </p>
+            
+            <div class="dsa-graphic" style="display: flex; flex-direction: column; gap: 10px; padding: 15px;">
+                <div style="font-weight: 500; font-size: 0.8rem; margin-bottom: 5px;">Binary Heap Array Representation:</div>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+                    {% if heap_array %}
+                        {% for item in heap_array %}
+                        <div class="tree-node" style="background: var(--accent-amber); font-size: 0.8rem; padding: 6px 10px; text-align: center;">
+                            <span style="font-size: 0.75rem; color: #1e293b; display: block; font-weight: normal;">idx: {{ loop.index0 }}</span>
+                            {{ item.name[:8] }} ({{ item.cgpa }})
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        No student data to construct heap.
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 0.85rem; color: #94a3b8;">
+                Formula: Left child: <code>2i + 1</code> | Right child: <code>2i + 2</code>
+            </div>
+        </div>
+
+        <!-- 3. Directed Graph Prerequisite flow -->
+        <div class="dsa-panel" style="grid-column: 1 / -1;">
+            <h3 style="color: var(--accent-purple); margin-bottom: 12px;">🔗 3. Directed Curriculum Prerequisite Graph</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 15px;">
+                Course registry curriculum links as a directed graph. Cycle-detection validates no circular prerequisites are allowed.
+            </p>
+            <div class="dsa-graphic" style="padding: 20px;">
+                {% if graph_edges %}
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-items: center;">
+                        {% for edge in graph_edges %}
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <span style="color: var(--accent-purple); font-weight: bold;">{{ edge.prereq_id }}</span>
+                            <span style="color: #64748b; margin: 0 8px;">➔</span>
+                            <span style="color: var(--accent-blue); font-weight: bold;">{{ edge.course_id }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    No course prerequisites mapped in graph. Go to Courses and link prerequisites!
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4. Dynamic Programming Timetable Scheduler -->
+        <div class="dsa-panel" style="grid-column: 1 / -1;">
+            <h3 style="color: var(--accent-emerald); margin-bottom: 12px;">🗓️ 4. Dynamic Programming Timetable Scheduler</h3>
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 15px;">
+                Optimizes room capacity allocations by running an **Interval Scheduling DP Algorithm**. Overlapping courses in the same room are resolved, scheduling the maximum conflict-free schedule.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Scheduled (Conflict Free) -->
+                <div>
+                    <h4 style="color: var(--accent-emerald); margin-bottom: 10px;">✅ DP Optimal Schedule</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Day</th>
+                                    <th>Slot</th>
+                                    <th>Course</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if dp_scheduled %}
+                                    {% for item in dp_scheduled %}
+                                    <tr>
+                                        <td><strong>{{ item.room }}</strong></td>
+                                        <td>{{ item.day }}</td>
+                                        <td style="color: var(--accent-blue);">{{ item.start_time }} - {{ item.end_time }}</td>
+                                        <td>{{ item.course_id }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="4" style="color: #64748b;">No schedule items built. Go to Courses.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Conflicts -->
+                <div>
+                    <h4 style="color: var(--accent-rose); margin-bottom: 10px;">❌ Dropped / Conflicted Overlaps</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Day</th>
+                                    <th>Slot</th>
+                                    <th>Course</th>
+                                    <th>Conflict Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if dp_conflicted %}
+                                    {% for item in dp_conflicted %}
+                                    <tr style="background: rgba(239, 68, 68, 0.05);">
+                                        <td><strong>{{ item.room }}</strong></td>
+                                        <td>{{ item.day }}</td>
+                                        <td>{{ item.start_time }} - {{ item.end_time }}</td>
+                                        <td>{{ item.course_id }}</td>
+                                        <td style="color: var(--accent-rose); font-size: 0.8rem;">{{ item.conflict_reason }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="5" style="color: var(--accent-emerald);">All schedules conflict-free! Zero overlaps detected.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <h4 style="color: var(--accent-blue); margin-top: 25px; margin-bottom: 12px; border-top: 1px solid var(--glass-border); padding-top: 20px;">Book Classroom Slot</h4>
+            <form action="{{ url_for('post_timetable') }}" method="POST" style="max-width: 650px;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="class_name">Class Name/Section</label>
+                        <input type="text" name="class_name" required placeholder="Section A">
+                    </div>
+                    <div class="form-group">
+                        <label for="course_id">Course ID</label>
+                        <select name="course_id" required>
+                            {% for c in courses_list %}
+                            <option value="{{ c.course_id }}">{{ c.name }} ({{ c.course_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="day">Weekday</label>
+                        <select name="day" required>
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday">Friday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="room">Classroom Room</label>
+                        <input type="text" name="room" required placeholder="Room 401">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="start_time">Start Time</label>
+                        <input type="time" name="start_time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_time">End Time</label>
+                        <input type="time" name="end_time" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="background: var(--accent-emerald);">Add Slot & run DP scheduling</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function runBstSearch() {
+        const studentId = document.getElementById("bst-search-id").value.trim();
+        if (!studentId) return;
+
+        fetch(`/api/bst_search/${studentId}`)
+            .then(res => res.json())
+            .then(data => {
+                const pathBox = document.getElementById("bst-path-box");
+                const compareBox = document.getElementById("bst-compare-box");
+                
+                if (data.error) {
+                    pathBox.innerHTML = `<span style="color: var(--accent-rose); font-weight: bold;">Error: ${data.error}</span>`;
+                    compareBox.innerHTML = "";
+                } else {
+                    const steps = data.path.map(step => `<span class="tree-node">${step}</span>`).join(" ➔ ");
+                    pathBox.innerHTML = `<div style="text-align: center;">Traversal nodes:<br><br>${steps}</div>`;
+                    
+                    compareBox.innerHTML = `
+                        <strong>Search Benchmarks:</strong><br>
+                        - BST Traversal steps: <strong>${data.bst_steps} nodes</strong> (Logarithmic time $O(\\log N)$)<br>
+                        - Linear list search steps: <strong>${data.linear_steps} nodes</strong> (Linear time $O(N)$)<br>
+                        - Performance gain: <strong>${Math.max(0, data.linear_steps - data.bst_steps)} steps saved</strong>.
+                    `;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    }
+</script>
+{% endblock %}

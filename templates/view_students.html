@@ -1,116 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Students - AI Student Database</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        // Dark Mode Logic
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            const target = current === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('theme', target);
-        }
+{% block title %}View Students - AI Student Database{% endblock %}
+{% block body_class %}page-view{% endblock %}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        });
-    </script>
-</head>
-
-<body class="page-view">
-    <nav>
-        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
-            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
-        </div>
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('view_students') }}" style="color: white;">View Students</a>
-            <a href="{{ url_for('add_student') }}">Add Student</a>
-            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline"
-                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h1 style="margin-bottom: 0; text-align: left;">Student Registry</h1>
-                <a href="{{ url_for('add_student') }}" class="btn btn-primary">+ Add Student</a>
-            </div>
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
-
-            <form action="{{ url_for('view_students') }}" method="get" class="controls">
-                <input type="text" name="search" placeholder="Search by ID, Name or Department..." value="{{ search }}"
-                    class="search-box">
-                <select name="sort" class="sort-box" onchange="this.form.submit()">
-                    <option value="name" {% if sort=='name' %}selected{% endif %}>Sort: Name</option>
-                    <option value="id" {% if sort=='id' %}selected{% endif %}>Sort: ID</option>
-                    <option value="department" {% if sort=='department' %}selected{% endif %}>Sort: Dept</option>
-                    <option value="year" {% if sort=='year' %}selected{% endif %}>Sort: Year</option>
-                </select>
-                <button type="submit" class="btn btn-outline">Find</button>
-            </form>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Reg ID</th>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Year</th>
-                            <th>Email</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if students %}
-                        {% for student in students %}
-                        <tr>
-                            <td style="font-weight: 600; color: var(--accent-blue);">{{ student['id'] }}</td>
-                            <td><a href="{{ url_for('student_profile', student_id=student['id']) }}"
-                                    style="color: inherit; text-decoration: none;">{{ student['name'] }}</a></td>
-                            <td style="font-size: 0.9rem;">{{ student['department'] }}</td>
-                            <td><span class="ai-badge"
-                                    style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2);">{{
-                                    student['year'] }}</span></td>
-                            <td>{{ student['email'] }}</td>
-                            <td style="display: flex; gap: 8px;">
-                                <a href="{{ url_for('edit_student', student_id=student['id']) }}"
-                                    class="btn btn-outline"
-                                    style="padding: 6px 12px; font-size: 0.8rem; border-color: var(--accent-blue); color: var(--accent-blue);">Edit</a>
-                                <a href="{{ url_for('delete_student', student_id=student['id']) }}"
-                                    class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;"
-                                    onclick="return confirm('Archive this record?');">Delete</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% else %}
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No student
-                                records found. AI awaiting data...</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <h1 style="margin-bottom: 0; text-align: left;">Student Registry</h1>
+        <a href="{{ url_for('add_student') }}" class="btn btn-primary">+ Add Student</a>
     </div>
-</body>
 
-</html>
+    <!-- Search Controls Form -->
+    <form action="{{ url_for('view_students') }}" method="get" style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;">
+        <input type="text" name="search" placeholder="Search by ID, Name, or Department..." value="{{ search }}" style="flex: 1; padding: 10px 15px; border-radius: 8px;">
+        <select name="sort" style="width: 180px; padding: 10px; border-radius: 8px;" onchange="this.form.submit()">
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Sort: Name</option>
+            <option value="id" {% if sort == 'id' %}selected{% endif %}>Sort: ID</option>
+            <option value="department" {% if sort == 'department' %}selected{% endif %}>Sort: Department</option>
+            <option value="year" {% if sort == 'year' %}selected{% endif %}>Sort: Year</option>
+        </select>
+        <button type="submit" class="btn btn-outline" style="padding: 10px 20px;">Find</button>
+    </form>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Reg ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Academic Level</th>
+                    <th>CGPA</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if students %}
+                {% for student in students %}
+                <tr>
+                    <!-- Profile Thumbnail -->
+                    <td>
+                        {% if student['profile_photo'] %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ student['profile_photo']) }}" alt="{{ student['name'] }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--accent-blue);">
+                        {% else %}
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.95rem; color: white;">
+                            {{ student['name'][0] | upper }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="font-weight: 600; color: var(--accent-blue);">{{ student['id'] }}</td>
+                    <td>
+                        <a href="{{ url_for('student_profile', student_id=student['id']) }}" style="color: inherit; text-decoration: none; font-weight: 500;">
+                            {{ student['name'] }}
+                        </a>
+                    </td>
+                    <td style="font-size: 0.9rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ student['department'] }}
+                    </td>
+                    <td>
+                        <span class="ai-badge" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); font-size: 0.75rem;">
+                            {{ student['semester'] or student['year'] }}
+                        </span>
+                    </td>
+                    <td style="font-weight: bold; color: var(--accent-amber);">{{ student['cgpa'] or '0.00' }}</td>
+                    <td style="font-size: 0.9rem;">{{ student['email'] }}</td>
+                    
+                    <td style="display: flex; gap: 8px;">
+                        <a href="{{ url_for('student_profile', student_id=student['id']) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: var(--accent-emerald); color: var(--accent-emerald);">View</a>
+                        <a href="{{ url_for('edit_student', student_id=student['id']) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: var(--accent-blue); color: var(--accent-blue);">Edit</a>
+                        <a href="{{ url_for('delete_student', student_id=student['id']) }}" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="return confirm('Archive this record?');">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        No student records found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

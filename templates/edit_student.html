@@ -1,124 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Student - AI Student Database</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            const target = current === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('theme', target);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        });
-    </script>
-</head>
+{% block title %}Edit Student - AI Student Database{% endblock %}
+{% block body_class %}page-add{% endblock %}
 
-<body class="page-add">
-    <nav>
-        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
-            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
+{% block content %}
+<div class="glass-card">
+    <h1>Edit Student Record</h1>
+    <p style="color: #94a3b8; margin-bottom: 25px; text-align: center;">
+        Modify academic stats, demographic tags, or update upload credentials for student: <strong>{{ student['name'] }}</strong> (ID: {{ student['id'] }})
+    </p>
+
+    <form action="{{ url_for('edit_student', student_id=student['id']) }}" method="post" enctype="multipart/form-data">
+        <!-- Section 1: Basic Info -->
+        <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--accent-blue);">Basic Information</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" name="name" id="name" value="{{ student['name'] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Institutional Email *</label>
+                <input type="email" name="email" id="email" value="{{ student['email'] }}" required>
+            </div>
+            <div class="form-group">
+                <label for="year">Academic Year *</label>
+                <select name="year" id="year" required>
+                    <option value="1st Year" {% if student['year'] == '1st Year' %}selected{% endif %}>1st Year</option>
+                    <option value="2nd Year" {% if student['year'] == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                    <option value="3rd Year" {% if student['year'] == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                    <option value="4th Year" {% if student['year'] == '4th Year' %}selected{% endif %}>4th Year</option>
+                </select>
+            </div>
         </div>
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('view_students') }}">View Students</a>
-            <a href="{{ url_for('add_student') }}">Add Student</a>
-            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline"
-                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="department">Department *</label>
+                <select name="department" id="department" required>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if student['department'] == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="semester">Semester *</label>
+                <select name="semester" id="semester" required>
+                    {% for sem in ['Semester 1', 'Semester 2', 'Semester 3', 'Semester 4', 'Semester 5', 'Semester 6', 'Semester 7', 'Semester 8'] %}
+                    <option value="{{ sem }}" {% if student['semester'] == sem %}selected{% endif %}>{{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="cgpa">Current CGPA (0.0 to 10.0)</label>
+                <input type="number" name="cgpa" id="cgpa" step="0.01" min="0" max="10" value="{{ student['cgpa'] or 0.0 }}">
+            </div>
+            <div class="form-group">
+                <label for="hobbies">Student Hobbies</label>
+                <input type="text" name="hobbies" id="hobbies" value="{{ student['hobbies'] or '' }}">
+            </div>
         </div>
-    </nav>
 
-    <div class="container">
-        <div class="glass-card">
-            <h1>Edit Student Record</h1>
-
-            <form action="{{ url_for('edit_student', student_id=student['id']) }}" method="post">
-                <h3 style="margin-bottom: 20px; font-size: 1.1rem; color: var(--accent-blue);">Basic Information (ID: {{
-                    student['id'] }})</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="name">Full Name *</label>
-                        <input type="text" name="name" id="name" value="{{ student['name'] }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Institutional Email *</label>
-                        <input type="email" name="email" id="email" value="{{ student['email'] }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="year">Academic Year *</label>
-                        <select name="year" id="year" required>
-                            <option value="1st Year" {% if student['year']=='1st Year' %}selected{% endif %}>1st Year
-                            </option>
-                            <option value="2nd Year" {% if student['year']=='2nd Year' %}selected{% endif %}>2nd Year
-                            </option>
-                            <option value="3rd Year" {% if student['year']=='3rd Year' %}selected{% endif %}>3rd Year
-                            </option>
-                            <option value="4th Year" {% if student['year']=='4th Year' %}selected{% endif %}>4th Year
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="department">Department *</label>
-                        <select name="department" id="department" required>
-                            {% for dept in departments %}
-                            <option value="{{ dept }}" {% if student['department']==dept %}selected{% endif %}>{{ dept
-                                }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="hobbies">Student Hobbies</label>
-                        <input type="text" name="hobbies" id="hobbies" value="{{ student['hobbies'] or '' }}">
-                    </div>
-                </div>
-
-                <h3 style="margin: 30px 0 20px; font-size: 1.1rem; color: var(--accent-emerald);">Parent & Contact
-                    Details</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="parent_name">Parent/Guardian Name</label>
-                        <input type="text" name="parent_name" id="parent_name"
-                            value="{{ student['parent_name'] or '' }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="parent_occupation">Parent's Occupation</label>
-                        <input type="text" name="parent_occupation" id="parent_occupation"
-                            value="{{ student['parent_occupation'] or '' }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="parent_contact">Parent Contact No.</label>
-                        <input type="text" name="parent_contact" id="parent_contact"
-                            value="{{ student['parent_contact'] or '' }}">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="address">Residential Address</label>
-                    <textarea name="address" id="address" rows="3">{{ student['address'] }}</textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="additional_info">Additional AI Notes</label>
-                    <textarea name="additional_info" id="additional_info"
-                        rows="2">{{ student['additional_info'] }}</textarea>
-                </div>
-
-                <div style="margin-top: 30px; display: flex; gap: 20px;">
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">Update Record</button>
-                    <a href="{{ url_for('view_students') }}" class="btn btn-outline" style="flex: 1;">Cancel</a>
-                </div>
-            </form>
+        <!-- Section 2: Scholarship & Category Details -->
+        <h3 style="margin: 30px 0 20px; font-size: 1.1rem; color: var(--accent-amber);">Demographics & Financials</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="category">Social Category</label>
+                <select name="category" id="category">
+                    <option value="General" {% if student['category'] == 'General' %}selected{% endif %}>General</option>
+                    <option value="OBC" {% if student['category'] == 'OBC' %}selected{% endif %}>OBC</option>
+                    <option value="SC" {% if student['category'] == 'SC' %}selected{% endif %}>SC</option>
+                    <option value="ST" {% if student['category'] == 'ST' %}selected{% endif %}>ST</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="income">Annual Household Income ($)</label>
+                <input type="number" name="income" id="income" value="{{ student['income'] or 0 }}" min="0">
+            </div>
         </div>
-    </div>
-</body>
 
-</html>
+        <!-- Section 3: Parent & Contact Details -->
+        <h3 style="margin: 30px 0 20px; font-size: 1.1rem; color: var(--accent-emerald);">Parent & Contact Details</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="parent_name">Parent/Guardian Name</label>
+                <input type="text" name="parent_name" id="parent_name" value="{{ student['parent_name'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="parent_occupation">Parent's Occupation</label>
+                <input type="text" name="parent_occupation" id="parent_occupation" value="{{ student['parent_occupation'] or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="parent_contact">Parent Contact No.</label>
+                <input type="text" name="parent_contact" id="parent_contact" value="{{ student['parent_contact'] or '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="address">Residential Address</label>
+            <textarea name="address" id="address" rows="3">{{ student['address'] or '' }}</textarea>
+        </div>
+
+        <!-- Section 4: File Uploads -->
+        <h3 style="margin: 30px 0 20px; font-size: 1.1rem; color: var(--accent-purple);">Documents & Portfolio</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="profile_photo">Replace Profile Picture (Image only)</label>
+                <input type="file" name="profile_photo" id="profile_photo" accept="image/*">
+                {% if student['profile_photo'] %}
+                <span style="font-size: 0.8rem; color: var(--accent-emerald);">Current: {{ student['profile_photo'] }}</span>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="documents">Replace Enrollment Certificates (PDF only)</label>
+                <input type="file" name="documents" id="documents" accept="application/pdf">
+                {% if student['documents'] %}
+                <span style="font-size: 0.8rem; color: var(--accent-emerald);">Current: {{ student['documents'] }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="additional_info">Additional Notes</label>
+            <textarea name="additional_info" id="additional_info" rows="2">{{ student['additional_info'] or '' }}</textarea>
+        </div>
+
+        <div style="margin-top: 30px; display: flex; gap: 20px;">
+            <button type="submit" class="btn btn-primary" style="flex: 2;">Save Changes</button>
+            <a href="{{ url_for('view_students') }}" class="btn btn-outline" style="flex: 1;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

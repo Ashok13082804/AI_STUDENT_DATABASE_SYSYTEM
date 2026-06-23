@@ -1,86 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chatbot - Student Database</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            const target = current === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('theme', target);
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        });
-    </script>
-</head>
+{% block title %}Smart AI Assistant - Student Database System{% endblock %}
+{% block body_class %}page-ai{% endblock %}
 
-<body class="page-ai">
-    <nav>
-        <div class="logo" style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center;">
-            <span style="color: var(--accent-blue); margin-right: 8px;">◈</span> AI DATABASE
-        </div>
-        <div class="nav-links" style="display: flex; align-items: center;">
-            <a href="{{ url_for('dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('view_students') }}">View Students</a>
-            <a href="{{ url_for('add_student') }}">Add Student</a>
-            <a href="{{ url_for('ai_insights') }}">AI Insights</a>
-            <a href="{{ url_for('search_bot') }}" style="color: white;">Smart Bot</a>
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin-left: 20px;">🌓</button>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline"
-                style="margin-left: 20px; padding: 8px 16px;">Logout</a>
-        </div>
-    </nav>
+{% block content %}
+<div class="glass-card" style="max-width: 800px; margin: 0 auto; text-align: left;">
+    <div style="text-align: center; margin-bottom: 25px;">
+        <span class="ai-badge">Offline Virtual Assistant</span>
+        <h1>AI Query Assistant</h1>
+        <p style="color: #94a3b8;">
+            Query the database in natural language. Try filtering by CGPA, attendance thresholds, or departments.
+        </p>
+    </div>
 
-    <div class="container" style="max-width: 800px;">
-        <div class="glass-card">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <span class="ai-badge">VIRTUAL ASSISTANT</span>
-                <h1>How can I help you today?</h1>
-                <p style="color: #94a3b8;">Ask me about student counts, departments, or registry summary.</p>
-            </div>
-
-            <form action="{{ url_for('search_bot') }}" method="get"
-                style="display: flex; gap: 10px; margin-bottom: 40px;">
-                <input type="text" name="query" placeholder="Try: 'Show all students' or 'Students in ECE'..."
-                    value="{{ query or '' }}" required style="flex: 1;">
-                <button type="submit" class="btn btn-primary">Ask Bot</button>
-            </form>
-
-            {% if response %}
-            <div class="stat-card"
-                style="text-align: left; border-left: 4px solid var(--accent-blue); animation: fadeIn 0.5s ease-out;">
-                <div style="display: flex; gap: 15px; align-items: flex-start;">
-                    <div
-                        style="background: var(--primary-gradient); padding: 10px; border-radius: 12px; font-size: 1.2rem;">
-                        🤖</div>
-                    <div>
-                        <h4 style="margin-bottom: 10px; color: var(--accent-blue);">AI Response:</h4>
-                        <p style="color: #cbd5e1; line-height: 1.6; font-size: 1.1rem;">{{ response }}</p>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <div style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px;">
-                <h5 style="color: #94a3b8; margin-bottom: 15px;">Suggested Queries:</h5>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <a href="{{ url_for('search_bot', query='How many students are registered?') }}"
-                        class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Count All</a>
-                    <a href="{{ url_for('search_bot', query='Show all students in ECE') }}" class="btn btn-outline"
-                        style="font-size: 0.8rem; padding: 6px 12px;">ECE Students</a>
-                    <a href="{{ url_for('search_bot', query='How many in CSE?') }}" class="btn btn-outline"
-                        style="font-size: 0.8rem; padding: 6px 12px;">CSE Count</a>
-                </div>
-            </div>
+    <!-- Scrollable Chat Bubble Window -->
+    <div class="chat-window" id="chat-window">
+        <div class="chat-bubble bot">
+            Hello! I am your AI Database Assistant. I run entirely locally and do not require external API keys. How can I help you today?
         </div>
     </div>
-</body>
 
-</html>
+    <!-- Chat input form -->
+    <form id="chat-form" onsubmit="sendChatMessage(event)" class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Type a message (e.g., 'Show students with CGPA > 8.5' or 'How many in CSE?')..." required style="flex: 1;">
+        <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Send</button>
+    </form>
+
+    <!-- Suggested Quick Prompts -->
+    <div style="margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px;">
+        <h5 style="color: #94a3b8; margin-bottom: 12px; font-weight: 600;">Suggested Queries:</h5>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button onclick="fillAndSend('Show all students with CGPA > 8.5')" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">CGPA > 8.5</button>
+            <button onclick="fillAndSend('List students with attendance below 75%')" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">Attendance &lt; 75%</button>
+            <button onclick="fillAndSend('How many students are in Computer Science and Engineering?')" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">CSE Enrollment</button>
+            <button onclick="fillAndSend('Show all students in 3rd year')" class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;">3rd Year Students</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatWindow = document.getElementById("chat-window");
+    const chatInput = document.getElementById("chat-input");
+
+    function appendMessage(text, sender) {
+        const bubble = document.createElement("div");
+        bubble.classList.add("chat-bubble", sender);
+        bubble.innerHTML = text.replace(/\n/g, '<br>');
+        chatWindow.appendChild(bubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function sendChatMessage(evt) {
+        if (evt) evt.preventDefault();
+        
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        appendMessage(message, "user");
+        chatInput.value = "";
+
+        // Send to backend API
+        fetch(`/api/chatbot_query?query=${encodeURIComponent(message)}`)
+            .then(res => res.json())
+            .then(data => {
+                appendMessage(data.response, "bot");
+            })
+            .catch(err => {
+                console.error(err);
+                appendMessage("Sorry, I encountered an issue connecting to the local server.", "bot");
+            });
+    }
+
+    function fillAndSend(text) {
+        chatInput.value = text;
+        sendChatMessage();
+    }
+</script>
+{% endblock %}

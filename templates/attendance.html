@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance - Student Database System{% endblock %}
+{% block body_class %}page-attendance{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="text-align: left;">
+    <span class="ai-badge">Attendance Registry</span>
+    <h1 style="text-align: left; margin-top: 10px;">Attendance Records & Defaulter Audits</h1>
+    <p style="color: #94a3b8; line-height: 1.6; margin-bottom: 25px;">
+        Track student attendance ratios across various active courses. Students with less than <strong>75% attendance</strong> are highlighted automatically in the defaulter category, making them ineligible for final examinations.
+    </p>
+
+    <!-- Tabbed views -->
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab(event, 'view-attendance-tab')">📊 Attendance Roster</button>
+            <button class="tab-btn" onclick="switchTab(event, 'defaulters-tab')" style="border-color: var(--accent-rose); color: var(--accent-rose);">⚠️ Defaulters List (&lt;75%)</button>
+            {% if session['role'] in ['admin', 'faculty'] %}
+            <button class="tab-btn" onclick="switchTab(event, 'mark-attendance-tab')">✏️ Mark Attendance</button>
+            {% endif %}
+        </div>
+
+        <!-- 1. View Attendance Tab -->
+        <div id="view-attendance-tab" class="tab-content active">
+            <h3 style="color: var(--accent-blue); margin-bottom: 15px;">Student Attendance Roster</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Course ID</th>
+                            <th>Course Name</th>
+                            <th>Attendance Percentage</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr>
+                            <td>{{ record.student_id }}</td>
+                            <td>{{ record.student_name }}</td>
+                            <td><strong>{{ record.course_id }}</strong></td>
+                            <td>{{ record.course_name }}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex-grow: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; width: 100px;">
+                                        <div style="height: 100%; width: {{ record.attendance_percentage }}%; background: {% if record.attendance_percentage >= 75 %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};"></div>
+                                    </div>
+                                    <strong>{{ record.attendance_percentage }}%</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if record.attendance_percentage >= 75 %}badge-low{% else %}badge-high{% endif %}">
+                                    {% if record.attendance_percentage >= 75 %}Eligible{% else %}Blocked{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. Defaulters Tab -->
+        <div id="defaulters-tab" class="tab-content">
+            <h3 style="color: var(--accent-rose); margin-bottom: 15px;">⚠️ Exam De-barred Students (Attendance &lt; 75%)</h3>
+            <div class="table-container">
+                {% if defaulters %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Course Code</th>
+                            <th>Course Name</th>
+                            <th>Attendance %</th>
+                            <th>Contact Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in defaulters %}
+                        <tr style="background: rgba(239, 68, 68, 0.05);">
+                            <td><strong>{{ record.student_id }}</strong></td>
+                            <td>{{ record.student_name }}</td>
+                            <td>{{ record.course_id }}</td>
+                            <td>{{ record.course_name }}</td>
+                            <td style="color: var(--accent-rose); font-weight: bold;">{{ record.attendance_percentage }}%</td>
+                            <td>{{ record.email }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: var(--accent-emerald); font-weight: bold;">Hooray! No students are currently in the attendance defaulters list.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3. Mark Attendance Tab -->
+        {% if session['role'] in ['admin', 'faculty'] %}
+        <div id="mark-attendance-tab" class="tab-content">
+            <h3 style="color: var(--accent-purple); margin-bottom: 15px;">Record Class Attendance Ratio</h3>
+            <form action="{{ url_for('update_attendance') }}" method="POST" style="max-width: 600px;">
+                <div class="form-group">
+                    <label for="enrollment_id">Select Student & Course Enrollment</label>
+                    <select name="enrollment_id" required>
+                        <option value="">-- Choose Enrollment --</option>
+                        {% for record in attendance_records %}
+                        <option value="{{ record.id }}">{{ record.student_name }} ({{ record.student_id }}) - {{ record.course_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendance_percentage">New Attendance Percentage (0-100)</label>
+                    <input type="number" name="attendance_percentage" min="0" max="100" required placeholder="e.g. 85">
+                </div>
+                <button type="submit" class="btn btn-primary">Update Attendance Record</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function switchTab(evt, tabId) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+            tabContents[i].classList.remove("active");
+        }
+        const tabButtons = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tabButtons.length; i++) {
+            tabButtons[i].classList.remove("active");
+        }
+        document.getElementById(tabId).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
+{% endblock %}
